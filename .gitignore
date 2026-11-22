@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.venv/
+art/icon64_preview.png
+.claude/settings.local.json

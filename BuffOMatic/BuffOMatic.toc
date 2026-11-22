@@ -1,0 +1,28 @@
+## Interface: 16001
+## Title: |cffffd100Buff-o-Matic|r
+## Notes: Smart paladin blessing manager for WoW Forever: one click, next player, best non-duplicate blessing.
+## Author: GREYsaurus
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\BuffOMatic\Media\icon
+## SavedVariables: BuffOMaticDB
+## Category: Buffs
+
+Locales\enUS.lua
+Core.lua
+Data\Blessings.lua
+Data\Priorities.lua
+Settings.lua
+Logic\Thresholds.lua
+Logic\AuraModel.lua
+Logic\Engine.lua
+Logic\Scheduler.lua
+Logic\CastState.lua
+Logic\Greater.lua
+Logic\Prepare.lua
+Compat.lua
+Auras.lua
+Roster.lua
+SecureButton.lua
+UI.lua
+Main.lua
+Slash.lua
