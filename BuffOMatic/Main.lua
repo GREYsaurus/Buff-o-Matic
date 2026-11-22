@@ -232,7 +232,7 @@ function ns.UpdateAlert(now)
                 al.last = now
                 if db.sound then PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959, "Master") end
                 if db.chatAlerts then
-                    ns.Print(L.REBUFF_SOON .. ": " .. ns.FamilyName(sum.shortest.family) .. " → " ..
+                    ns.Print(L.REBUFF_SOON .. ": " .. ns.FamilyName(sum.shortest.family) .. " on " ..
                         sum.shortest.member.name .. " " .. ns.FormatTime(sum.shortest.remaining))
                 end
             end

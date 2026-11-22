@@ -73,7 +73,7 @@ local function memberTooltip(owner, m)
         local rt = UI.ReasonText(d)
         if rt ~= "" then GameTooltip:AddLine(rt, 0.8, 0.8, 0.8, true) end
         for _, sk in ipairs(d.skipped or {}) do
-            GameTooltip:AddLine("• " .. UI.SkipText(sk), 0.7, 0.7, 0.7, true)
+            GameTooltip:AddLine("- " .. UI.SkipText(sk), 0.7, 0.7, 0.7, true)
         end
         if d.eff then GameTooltip:AddLine(thresholdText(d.eff), 0.5, 0.7, 1, true) end
     end
@@ -106,7 +106,7 @@ local function mainTooltip(owner)
         local d = ns.decisions[a.guid]
         if d then
             GameTooltip:AddLine(UI.ReasonText(d), 0.8, 0.8, 0.8, true)
-            for _, sk in ipairs(d.skipped or {}) do GameTooltip:AddLine("• " .. UI.SkipText(sk), 0.7, 0.7, 0.7, true) end
+            for _, sk in ipairs(d.skipped or {}) do GameTooltip:AddLine("- " .. UI.SkipText(sk), 0.7, 0.7, 0.7, true) end
             if d.eff then GameTooltip:AddLine(thresholdText(d.eff), 0.5, 0.7, 1, true) end
         end
     else
@@ -393,7 +393,7 @@ function UI.Update()
                 famText = d.family and fam(d.family) or ""
                 if d.status == "CAST" then
                     if d.castKind == "MISSING" then timer = COLORS.red .. L.ST_MISSING .. "|r"
-                    elseif d.castKind == "REPLACE" then timer = COLORS.gold .. "→" .. fam(d.family) .. "|r"
+                    elseif d.castKind == "REPLACE" then timer = COLORS.gold .. "> " .. fam(d.family) .. "|r"
                     else timer = COLORS.orange .. ns.FormatTime(m.mine and m.mine.expirationTime and (m.mine.expirationTime - now)) .. "|r" end
                     local blk = ns.blocks[m.guid]
                     if blk then timer = COLORS.grey .. UI.BlockText(blk) .. "|r" end

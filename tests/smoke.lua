@@ -131,7 +131,13 @@ SlashCmdList = {}
 
 local function U(unit) return world.units[unit] end
 UnitGUID = function(unit) local u = U(unit) return u and u.guid end
-UnitName = function(unit) local u = U(unit) return u and u.name, nil end
+UnitName = function(unit)
+    local u = U(unit)
+    if not u then return nil end
+    local first, last = u.name:match("^(%S+) (%S+)$")   -- Forever returns surname as 2nd value
+    if first then return first, last end
+    return u.name, nil
+end
 UnitClass = function(unit) local u = U(unit) return u and u.class, u and u.class end
 UnitIsUnit = function(a, b)
     local ua, ub = U(a), U(b)

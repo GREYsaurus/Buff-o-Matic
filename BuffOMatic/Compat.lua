@@ -49,7 +49,11 @@ end
 function C.UnitName(unit)
     local ok, name, realm = pcall(UnitName, unit)
     if not ok or C.IsSecret(name) or C.IsSecret(realm) or not name then return nil end
-    if realm and realm ~= "" then return name .. "-" .. realm end
+    if realm and realm ~= "" then
+        -- Forever is realmless: the second return is the character's surname
+        -- ("Sabrine", "Grey" -> "Sabrine Grey"). Elsewhere it is a realm.
+        return name .. (C.IsForever() and " " or "-") .. realm
+    end
     return name
 end
 
