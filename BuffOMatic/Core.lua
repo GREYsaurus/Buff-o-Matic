@@ -1,7 +1,7 @@
 -- Buff-o-Matic: namespace, event dispatch, out-of-combat queue, printing.
 local ADDON, ns = ...
 ns.ADDON = ADDON
-ns.VERSION = "1.0.0"
+ns.VERSION = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(ADDON, "Version")) or "dev"
 
 local frame = CreateFrame("Frame")
 ns.eventFrame = frame

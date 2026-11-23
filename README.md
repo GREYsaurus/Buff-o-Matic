@@ -112,5 +112,13 @@ python tests/run_tests.py
 - `tools/make_logo.py` regenerates the logo, icon and banner (needs Pillow).
 - Manual in-game checklist: [TESTING.md](TESTING.md).
 
+## Releasing
+Pushing a version tag publishes automatically. `.github/workflows/release.yml` runs the BigWigs packager, which builds the zip (see `.pkgmeta`), uploads it to CurseForge project 1825190 as a WoW Forever file, and creates a GitHub Release. The changelog comes from the commits.
+```
+git tag v1.0.1
+git push origin v1.0.1
+```
+Tags containing `beta` or `alpha` publish as beta or alpha files. The workflow needs a `CF_API_TOKEN` repository secret holding a CurseForge API token.
+
 ## License
 MIT. See [LICENSE](LICENSE).

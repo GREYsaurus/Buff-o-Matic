@@ -1,0 +1,15 @@
+package-as: BuffOMatic
+
+# The addon lives in the BuffOMatic/ subfolder; package only that.
+move-folders:
+    BuffOMatic/BuffOMatic: BuffOMatic
+
+ignore:
+    - README.md
+    - RESEARCH.md
+    - TESTING.md
+    - tests
+    - tools
+    - art
+    - curseforge
+    - dist

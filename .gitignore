@@ -3,3 +3,4 @@ __pycache__/
 .venv/
 art/icon64_preview.png
 .claude/settings.local.json
+dist/
