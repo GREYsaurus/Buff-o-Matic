@@ -94,7 +94,12 @@ end
 
 C_Timer = {
     After = function(d, fn) timers[#timers + 1] = { at = clock + d, fn = fn } end,
-    NewTicker = function(d, fn) local t = { at = clock + d, fn = fn, every = d }; timers[#timers + 1] = t; return t end,
+    NewTicker = function(d, fn)
+        local t = { at = clock + d, fn = fn, every = d }
+        t.Cancel = function(self) self.cancelled = true end
+        timers[#timers + 1] = t
+        return t
+    end,
 }
 local function advance(sec)
     local target = clock + sec
@@ -104,6 +109,7 @@ local function advance(sec)
         if not t or t.at > target then break end
         clock = t.at
         table.remove(timers, 1)
+        if t.cancelled then t.every = nil t.fn = function() end end
         if t.every then t.at = clock + t.every; timers[#timers + 1] = t end
         t.fn()
     end
@@ -176,6 +182,25 @@ C_Spell = {
     IsSpellUsable = function(id) return world.known[id] == true, world.oom == true end,
 }
 C_Item = { GetItemCount = function() return world.reagents end }
+IsInGroup = function() return GetNumSubgroupMembers() > 0 end
+IsInInstance = function() return false end
+LE_PARTY_CATEGORY_INSTANCE = 2
+Ambiguate = function(n) return n end
+UnitIsGroupLeader = function(unit) return world.leader == unit end
+UnitIsGroupAssistant = function() return false end
+world.addonSent = {}
+C_ChatInfo = {
+    RegisterAddonMessagePrefix = function(p) world.prefix = p return true end,
+    SendAddonMessage = function(p, msg, ch) world.addonSent[#world.addonSent + 1] = { p, msg, ch } return true end,
+}
+world.settings = {}
+Settings = {
+    RegisterCanvasLayoutCategory = function(frame, name) return { frame = frame, name = name, GetID = function() return 77 end } end,
+    RegisterAddOnCategory = function(cat) world.settings.registered = cat end,
+    OpenToCategory = function(id) world.settings.opened = id end,
+}
+Minimap = newFrame("Minimap")
+function FrameMT:GetWidth() return 140 end
 
 ---------------------------------------------------------------- casting simulation
 local castSeq = 0
@@ -470,6 +495,96 @@ slash("help")
 local sawEscaped = false
 for _, line in ipairs(printed) do if line:find("tank||healer", 1, true) then sawEscaped = true end end
 check(sawEscaped, "help text escapes pipes")
+
+-- 14) Keybinding, options panel, minimap/compartment.
+check(_G["BINDING_NAME_CLICK BuffOMaticMainButton:LeftButton"] ~= nil and BINDING_HEADER_BUFFOMATIC ~= nil, "binding strings defined")
+do
+    local fh = io.open(ADDON_DIR .. "Bindings.xml", "r")
+    local xml = fh and fh:read("*a") or ""
+    if fh then fh:close() end
+    check(xml:find('name="CLICK BuffOMaticMainButton:LeftButton"', 1, true) ~= nil, "Bindings.xml binds the main button")
+end
+check(world.settings.registered and world.settings.registered.frame == ns.Options.panel, "options panel registered under AddOns")
+slash("options")
+check(world.settings.opened == 77, "/bfm options opens the panel")
+ns.Options.Refresh()
+check(namedFrames.BuffOMaticMinimapButton ~= nil and namedFrames.BuffOMaticMinimapButton.shown, "minimap button shown")
+slash("minimap off")
+check(not namedFrames.BuffOMaticMinimapButton.shown and ns.db.minimap.hide, "minimap button hidden")
+slash("minimap on")
+check(type(BuffOMatic_OnAddonCompartmentClick) == "function", "addon compartment handler defined")
+local hiddenBefore = ns.db.hidden
+BuffOMatic_OnAddonCompartmentClick("BuffOMatic", "LeftButton")
+check(ns.db.hidden ~= hiddenBefore, "compartment left-click toggles the window")
+BuffOMatic_OnAddonCompartmentClick("BuffOMatic", "LeftButton")
+check((not ns.db.hidden) == (not hiddenBefore), "compartment toggles back")
+
+-- 15) PallyPower coordination (read-only).
+check(world.prefix == "PLPWR", "PallyPower prefix registered")
+local sentReq = false
+for _, m in ipairs(world.addonSent) do if m[1] == "PLPWR" and m[2] == "REQ" then sentReq = true end end
+check(sentReq, "asked PallyPower users for their plans")
+for _, m in ipairs(world.addonSent) do check(m[2] == "REQ", "only REQ is ever sent: " .. tostring(m[2])) end
+local function pp(msg, sender) fire("CHAT_MSG_ADDON", "PLPWR", msg, "PARTY", sender) advance(0.5) end
+-- Known party, everyone already carrying my blessing.
+local function mine(id) return { spellId = id, sourceUnit = "player", expirationTime = clock + 3500, duration = 3600 } end
+world.units.player = { guid = "Player-1-0001", name = "Lumen Brightforge", class = "PALADIN", role = "NONE", auras = { mine(20217) } }
+world.units.party1 = { guid = "Player-1-0002", name = "Brann Ironwall", class = "WARRIOR", role = "TANK", auras = { mine(20217) } }
+world.units.party2 = { guid = "Player-1-0003", name = "Vex Shadowstep", class = "ROGUE", role = "DAMAGER", auras = { mine(20217) } }
+world.units.party3 = { guid = "Player-1-0004", name = "Ilsa Frostweave", class = "MAGE", role = "DAMAGER", auras = { mine(20217) } }
+world.units.party4 = { guid = "Player-1-0005", name = "Oren Dawnshield", class = "PALADIN", role = "HEALER", auras = { mine(25290) } }
+fire("GROUP_ROSTER_UPDATE") advance(1.2)
+local function dec(unit) return ns.decisions[world.units[unit].guid] end
+-- Oren plans Kings for mages. I already hold Kings on Ilsa: keep it (no churn).
+pp("ASSIGN Oren Dawnshield 7 3", "Oren Dawnshield")
+check(dec("party3").family == "KINGS" and dec("party3").status == "HEALTHY", "keep my existing blessing despite plan")
+-- My Kings on Ilsa drops off: now Kings is Oren's job, so I pick Wisdom.
+world.units.party3.auras = {}
+fire("UNIT_AURA", "party3", {}) advance(0.5)
+local d3 = dec("party3")
+check(d3.family == "WISDOM", "planned Kings left to Oren; Wisdom chosen: " .. tostring(d3.family))
+local sawPlanned = false
+for _, sk in ipairs(d3.skipped) do if sk.code == "PLANNED_BY" and sk.by == "Oren Dawnshield" then sawPlanned = true end end
+check(sawPlanned, "skip reason names the planning paladin")
+check(ns.UI.SkipText({ code = "PLANNED_BY", family = "KINGS", by = "Oren Dawnshield" }):find("Oren", 1, true) ~= nil, "planned skip text")
+-- A non-leader can't rewrite Oren's plan.
+pp("ASSIGN Oren Dawnshield 7 2", "Vex Shadowstep")
+check(dec("party3").family == "WISDOM", "non-leader assignment for another paladin ignored")
+-- Leader Oren assigns ME Might on Brann (NASSIGN, underscores for spaces).
+world.leader = "party4"
+pp("NASSIGN Lumen_Brightforge 1 Brann_Ironwall 2", "Oren Dawnshield")
+check(dec("party1").family == "MIGHT" and dec("party1").reason.code == "PP_ASSIGNED", "my PallyPower assignment followed")
+slash("assign Brann kings") advance(0.5)
+check(dec("party1").family == "KINGS" and dec("party1").reason.code == "ASSIGNED", "manual pin beats PallyPower")
+slash("assign Brann auto") advance(0.5)
+-- Ready check: Ilsa is missing a blessing.
+printed = {}
+fire("READY_CHECK", "Oren Dawnshield", 30) advance(0.5)
+local sawReady = false
+for _, line in ipairs(printed) do if line:find("Ready check", 1, true) and line:find("Ilsa Frostweave", 1, true) then sawReady = true end end
+check(sawReady, "ready check names members missing a blessing")
+ns.db.readyCheck = false
+printed = {}
+fire("READY_CHECK", "Oren Dawnshield", 30) advance(0.5)
+local quiet = true
+for _, line in ipairs(printed) do if line:find("Ready check", 1, true) then quiet = false end end
+check(quiet, "ready check reminder can be turned off")
+ns.db.readyCheck = true
+-- Leader CLEAR wipes plans; sync off ignores them entirely.
+pp("CLEAR", "Oren Dawnshield")
+check(dec("party3").family == "KINGS" and dec("party1").reason.code ~= "PP_ASSIGNED", "CLEAR removes plans")
+pp("ASSIGN Oren Dawnshield 7 3", "Oren Dawnshield")
+slash("pallypower off") advance(0.5)
+check(dec("party3").family == "KINGS", "sync off ignores PallyPower plans")
+slash("pallypower on") advance(0.5)
+check(dec("party3").family == "WISDOM", "sync back on")
+-- Combat: plans keep applying; nothing is ever sent in combat.
+local nSent = #world.addonSent
+enterCombat()
+ns.RequestPallyPower(true)
+check(#world.addonSent == nSent, "no addon messages sent in combat")
+leaveCombat()
+advance(1.2)
 
 ---------------------------------------------------------------- report
 for _, e in ipairs(errors) do failures[#failures + 1] = "runtime: " .. e end

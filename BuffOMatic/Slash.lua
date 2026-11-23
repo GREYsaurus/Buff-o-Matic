@@ -57,6 +57,8 @@ local HELP = {
     "/bfm sound on|off | chat on|off | others on|off | members on|off | buttons on|off",
     "/bfm table  - print effective priority tables",
     "/bfm reset  - reset position and rotation state | resetall confirm - all settings",
+    "/bfm options  - open the settings panel | minimap on|off",
+    "/bfm readycheck on|off | pallypower on|off | pp  - show PallyPower plans",
     "/bfm debug on|off | diag",
 }
 
@@ -205,6 +207,35 @@ local function handler(msg)
         ns.db = BuffOMaticDB
         ns.UI.ResetPosition()
         p("all settings reset") changed()
+    elseif cmd == "options" or cmd == "config" then ns.Options.Open()
+    elseif cmd == "minimap" then
+        db.minimap.hide = not onoff(rest, not db.minimap.hide)
+        ns.Options.UpdateMinimap()
+        p("minimap button: " .. tostring(not db.minimap.hide))
+    elseif cmd == "readycheck" then db.readyCheck = onoff(rest, db.readyCheck) p("ready check reminder: " .. tostring(db.readyCheck))
+    elseif cmd == "pallypower" then
+        db.pallyPowerSync = onoff(rest, db.pallyPowerSync)
+        p("PallyPower sync: " .. tostring(db.pallyPowerSync)) changed()
+        if db.pallyPowerSync then ns.RequestPallyPower(true) end
+    elseif cmd == "pp" then
+        ns.RequestPallyPower(true)
+        local any = false
+        for pally, row in pairs(ns.pp.class) do
+            local parts = {}
+            for class, idx in pairs(ns.PPSync.CLASS_INDEX) do
+                local f = row[idx] and ns.PPSync.BLESSING_FAMILY[row[idx]]
+                if f then parts[#parts + 1] = class:sub(1, 1) .. class:sub(2):lower() .. "=" .. ns.FamilyName(f) end
+            end
+            table.sort(parts)
+            if #parts > 0 then any = true p(pally .. ": " .. table.concat(parts, ", ")) end
+        end
+        for pally, targets in pairs(ns.pp.normal) do
+            for t, b in pairs(targets) do
+                local f = ns.PPSync.BLESSING_FAMILY[b]
+                if f then any = true p(pally .. ": " .. t .. "=" .. ns.FamilyName(f)) end
+            end
+        end
+        if not any then p("no PallyPower plans received (asked the group again)") end
     elseif cmd == "debug" then db.debug = onoff(rest, db.debug) p("debug: " .. tostring(db.debug))
     elseif cmd == "diag" then diag()
     else

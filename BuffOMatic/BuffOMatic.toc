@@ -9,6 +9,9 @@
 ## X-License: MIT
 ## X-Website: https://github.com/GREYsaurus/Buff-o-Matic
 ## Category: Buffs
+## AddonCompartmentFunc: BuffOMatic_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: BuffOMatic_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: BuffOMatic_OnAddonCompartmentLeave
 
 Locales\enUS.lua
 Core.lua
@@ -22,10 +25,13 @@ Logic\Scheduler.lua
 Logic\CastState.lua
 Logic\Greater.lua
 Logic\Prepare.lua
+Logic\PPSync.lua
 Compat.lua
 Auras.lua
 Roster.lua
 SecureButton.lua
 UI.lua
 Main.lua
+Sync.lua
+Options.lua
 Slash.lua

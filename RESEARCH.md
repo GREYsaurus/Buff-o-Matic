@@ -63,7 +63,15 @@ AznamirWoW/PallyPower at commit 7510a3bd (2026-11-22). Its Forever port (by Pall
 - Its secure buttons use `type=spell` plus `unit` and `spell` attributes, and every attribute write is guarded by `InCombatLockdown`.
 - Default class templates still list Salvation. On Forever they are filtered out by `IsSpellKnown`, so Buff-o-Matic built its own Forever-specific table rather than copying them.
 
-Buff-o-Matic does **not** speak the PallyPower sync protocol, so it can't see other paladins' *assignments*, only their actual buffs. That's what the stability logic below is for.
+### PallyPower sync protocol (read-only support since 1.1.0)
+Buff-o-Matic listens to PallyPower's addon messages but never sends its own plans. Its only outgoing message is `REQ`, which asks PallyPower users to resend. Details from `PallyPower.lua` and `PallyPowerValues.lua`:
+- **Prefix:** `PLPWR`. Channel is PARTY, RAID or INSTANCE_CHAT; replies to `REQ` arrive by WHISPER.
+- **Classes:** 1 Warrior, 2 Rogue, 3 Priest, 4 Druid, 5 Paladin, 6 Hunter, 7 Mage, 8 Warlock, 9 Shaman.
+- **Blessings:** 1 Wisdom, 2 Might, 3 Kings. Indices 4-8 (Salvation, Light, Sanctuary, Sacrifice, Horn) don't exist on Forever and are ignored. `0` (or `n` inside strings) means none.
+- **Messages used:** `SELF <ranks>@<9 class chars>`, `ASSIGN <pally> <class> <blessing>`, `MASSIGN <pally> <blessing>`, `PASSIGN <pally>@<9 chars>`, `NASSIGN <P> <class> <T> <blessing>[@...]` (spaces in names sent as `_`), `CLEAR [SKIP]`, `FREEASSIGN YES|NO`.
+- **Authority:** a message naming another paladin is accepted only from the group leader or an assistant, or if that paladin announced `FREEASSIGN YES`. This is the same rule PallyPower uses.
+- **Semantics:** another paladin's class assignment, or a per-player override, becomes *planned supply*. Smart Bless leaves that blessing to them unless you already hold it on that player, so nothing churns. A plan that names **you** acts as a default assignment, and your own manual pins win. Real buffs on players always take precedence over plans.
+- **Unverified on Forever:** whether `Ambiguate(sender, "none")` ever includes a realm suffix. Buff-o-Matic maps `Name-Realm` back onto roster names either way.
 
 ## 4. Design decisions (judgment)
 

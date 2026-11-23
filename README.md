@@ -11,6 +11,8 @@ A paladin blessing manager for **WoW Forever** (interface 16001). Click one **Sm
 - Role-safe defaults with per-player, per-class and per-role overrides.
 - Timers, a **Rebuff soon** warning with an optional sound, a separate **Missing blessing** state, and an optional view of other paladins' expiring blessings.
 - Optional, safety-checked **Greater Blessing** mode.
+- **Key binding**, a **settings panel**, a **minimap / addon-compartment button**, and a **ready-check reminder**.
+- **PallyPower-aware:** reads other paladins' PallyPower assignments, read-only, and stays out of their way.
 
 > Research notes and every source are in [RESEARCH.md](RESEARCH.md).
 
@@ -29,6 +31,20 @@ A paladin blessing manager for **WoW Forever** (interface 16001). Click one **Sm
   - **Shortest**: the shortest remaining timer among *your* intended blessings. It turns into **Rebuff soon** below 5:00.
   - **N uncertain**: members whose buffs can't be read. They are never auto-buffed.
 - When everyone is covered, the button says **"Party buffed — nothing to cast."**
+
+### Key binding, options and minimap
+- **Key binding:** Options > Keybindings > AddOns > Buff-o-Matic > *Smart Bless*. The key behaves exactly like a click: one cast per press, acting on key release.
+- **Options panel:** Options > AddOns > Buff-o-Matic, or `/bfm options`. Every option is also a slash command.
+- **Minimap button** (drag it around the edge) and the **addon compartment** entry. Left-click shows or hides the window; right-click opens the options. Use `/bfm minimap off` to hide the minimap button.
+- **Ready check:** if anyone is still missing your blessing, or one is about to expire, you get a sound, a chat line naming them, and a flashing window border. Turn it off with `/bfm readycheck off`.
+
+### PallyPower coordination
+If other paladins use PallyPower, Buff-o-Matic reads their assignments. It never sends any, apart from a request asking them to resend.
+- A blessing another paladin is assigned to give a player (by class, or by name) is **left to them**. The tooltip says "Kings is Oren's job (PallyPower)".
+- If you already have that blessing on the player, you keep it until it's due, so nothing flips back and forth.
+- If PallyPower assigns **you** something, by your raid leader or another paladin with free assignment, it becomes your default for that player. Your own `/bfm assign` and right-click pins still win.
+- Buffs actually on players always come first. A plan never makes you overwrite anyone.
+- `/bfm pp` lists the plans received. `/bfm pallypower off` ignores them.
 
 ### Combat
 WoW Forever hides aura data from addons during combat ("secret values"), and secure buttons can't be reconfigured in combat. So:
@@ -84,6 +100,9 @@ The row tooltip shows which source was used. Right-clicking a row also lets you 
 | `/bfm raid on\|off` | rotate through the whole raid (default: your subgroup) |
 | `/bfm table` | print the effective priority tables |
 | `/bfm reset` / `/bfm resetall confirm` | reset position and rotation / everything |
+| `/bfm options`, `/bfm minimap on\|off` | settings panel, minimap button |
+| `/bfm readycheck on\|off` | ready-check reminder (default on) |
+| `/bfm pallypower on\|off`, `/bfm pp` | follow PallyPower assignments (default on); list received plans |
 | `/bfm debug on\|off`, `/bfm diag` | debugging and a full state dump |
 
 ## Greater Blessings (optional)
@@ -98,7 +117,7 @@ Otherwise you get the normal single-target blessing.
 
 ## Limitations
 - **No in-combat smart cycling.** The client hides the data it would need and locks the button.
-- It doesn't speak PallyPower's assignment protocol. It reacts to actual buffs and leaves other paladins' blessings alone. Use `/bfm assign` to coordinate.
+- PallyPower support is read-only. Buff-o-Matic follows PallyPower plans but doesn't publish its own, so PallyPower users see your actual buffs rather than a plan.
 - Raid support works but is secondary: by default only your subgroup rotates, though Greater-Blessing safety checks always look at the whole raid.
 - Unverified Forever details are listed in RESEARCH.md: lower-rank spell IDs, Greater/normal overwrite rules, and aura secrecy inside instances.
 
@@ -107,8 +126,8 @@ Otherwise you get the normal single-target blessing.
 pip install lupa
 python tests/run_tests.py
 ```
-- `tests/run.lua`: 25 tests of the pure decision engine, thresholds, scheduler, cast state machine, Greater safety and combat guard. They cover all 22 scenarios from the spec.
-- `tests/smoke.lua`: loads every addon file in TOC order against a mocked WoW API and simulates a full session (65 checks).
+- `tests/run.lua`: 30 tests of the pure decision engine, thresholds, scheduler, cast state machine, Greater safety, combat guard and PallyPower parser. They cover all 22 scenarios from the spec.
+- `tests/smoke.lua`: loads every addon file in TOC order against a mocked WoW API and simulates a full session (104 checks), including options, the minimap button, ready checks and PallyPower messages.
 - `tools/make_logo.py` regenerates the logo, icon and banner (needs Pillow).
 - Manual in-game checklist: [TESTING.md](TESTING.md).
 

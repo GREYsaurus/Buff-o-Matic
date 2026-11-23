@@ -115,6 +115,9 @@ function ns.Refresh(rosterChanged)
     -- Expire a click that never produced a cast.
     CS.ExpireAttempt(ns.cast, ns.sched, now, db)
 
+    -- PallyPower plans from other paladins (read-only coordination).
+    if ns.ApplyPallyPower then ns.ApplyPallyPower() end
+
     -- Decisions for EVERY member (Greater safety needs excluded members too).
     local ctx = buildCtx(now)
     local decisions = {}

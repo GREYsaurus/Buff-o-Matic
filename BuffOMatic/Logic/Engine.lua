@@ -8,6 +8,8 @@
 --   others = { [FAM] = aura },  -- blessings from other paladins / equivalent sources
 --   unreadable = bool,          -- aura data restricted / secret
 --   assigned = FAM|nil,         -- manual pinned assignment
+--   ppAssigned = FAM|nil,       -- my PallyPower assignment (manual pin wins)
+--   planned = { [FAM] = name }, -- families other paladins plan to supply (PallyPower)
 --   priorityOverride = list|nil -- per-player ranked list
 -- }
 -- ctx = { now, settings, known = { [FAM]=true }, lastCast = { [guid] = {family,time} },
@@ -99,6 +101,11 @@ function E.Decide(member, ctx)
                     family = fam, code = expiring and "SUPPLIED_BY_EXPIRING" or "SUPPLIED_BY",
                     by = o.casterName, external = o.external, remaining = rem,
                 }
+            elseif member.planned and member.planned[fam]
+                and not (mine and mine.family == fam) then
+                -- Another paladin's PallyPower plan covers it. If I already hold it, keep it
+                -- (no churn); otherwise leave it to them.
+                d.skipped[#d.skipped + 1] = { family = fam, code = "PLANNED_BY", by = member.planned[fam] }
             else
                 candidates[#candidates + 1] = fam
             end
@@ -108,10 +115,16 @@ function E.Decide(member, ctx)
 
     local intended, code
     -- 1. Manual assignment (stable, never oscillates) unless another paladin covers it.
-    if member.assigned then
-        local a = member.assigned
-        if B.FAMILIES[a] and ctx.known[a] and E.IsUseful(a, member, false) and not others[a] then
-            intended, code = a, "ASSIGNED"
+    local a = member.assigned or member.ppAssigned
+    if a then
+        local assignCode = member.assigned and "ASSIGNED" or "PP_ASSIGNED"
+        local plannedElsewhere = not member.assigned and member.planned and member.planned[a]
+        if B.FAMILIES[a] and ctx.known[a] and E.IsUseful(a, member, false) and not others[a]
+            and not plannedElsewhere then
+            intended, code = a, assignCode
+        elseif not member.assigned then
+            -- A PallyPower plan I can't fulfil just falls through to normal selection.
+            intended = nil
         else
             table.insert(d.skipped, 1, {
                 family = a,
@@ -135,7 +148,7 @@ function E.Decide(member, ctx)
         intended = candidates[1]
         code = "BEST"
         for _, sk in ipairs(d.skipped) do
-            if sk.code == "SUPPLIED_BY" or sk.code == "SUPPLIED_BY_EXPIRING" then code = "FALLBACK" break end
+            if sk.code == "SUPPLIED_BY" or sk.code == "SUPPLIED_BY_EXPIRING" or sk.code == "PLANNED_BY" then code = "FALLBACK" break end
         end
     end
 

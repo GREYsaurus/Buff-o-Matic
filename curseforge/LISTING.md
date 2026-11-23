@@ -41,6 +41,19 @@ Built specifically for **WoW Forever** (60-minute blessings; Might, Wisdom and K
 - Optional list of other paladins' expiring blessings
 - Tooltips on every party member: role, priority, your blessing, others' blessings
 
+### Key binding, options and minimap button
+- Bind **Smart Bless** to a key (Keybindings > AddOns): one press, one cast.
+- A full **options panel** (Options > AddOns > Buff-o-Matic, or `/bfm options`).
+- A **minimap button** and **addon compartment** entry.
+- **Ready-check reminder:** a sound, a chat line and a flashing window when someone still needs your blessing.
+
+### Works with PallyPower
+If the other paladins use **PallyPower**, Buff-o-Matic reads their assignments, read-only:
+- whatever they are assigned to give, you leave to them
+- whatever PallyPower assigns *you* becomes your default
+
+Buffs actually on players always come first, so you never overwrite anyone.
+
 ### Roles and overrides
 Roles come from the party role icons (Group Finder or Set Role). Solo, your own talent spec is used. **Right-click any member** to set their role, pin a blessing, or exclude them.
 Slash commands: `/bfm` (or `/buffomatic`). Examples:
@@ -70,5 +83,5 @@ WoW Forever hides buff information from addons in combat. Smart cycling therefor
 
 ### Notes
 - Paladins only. Party first; raids are supported (your subgroup by default, `/bfm raid on` for everyone).
-- Doesn't use PallyPower's assignment sync. It reads the buffs that are actually on players.
+- PallyPower support is read-only: Buff-o-Matic follows PallyPower plans but doesn't publish its own.
 - Open source (MIT): https://github.com/GREYsaurus/Buff-o-Matic. Bug reports are welcome; please include the output of `/bfm diag`.

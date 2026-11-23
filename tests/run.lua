@@ -22,6 +22,7 @@ load("Logic/Scheduler.lua")
 load("Logic/CastState.lua")
 load("Logic/Greater.lua")
 load("Logic/Prepare.lua")
+load("Logic/PPSync.lua")
 
 local E, S, C, G, Pr, T, A, B = ns.Engine, ns.Scheduler, ns.CastState, ns.Greater, ns.Prepare, ns.Thresholds, ns.AuraModel, ns.Blessings
 
@@ -427,6 +428,75 @@ end)
 test("X3 settings merge is non-destructive", function()
     local db = ns.Settings.Merge({ refreshThreshold = 900, players = { Bob = { assigned = "KINGS" } } })
     eq(db.refreshThreshold, 900); eq(db.warnThreshold, 300); eq(db.players.Bob.assigned, "KINGS")
+end)
+
+---------------------------------------------------------------- PallyPower parser
+local PP = ns.PPSync
+test("PP1 SELF / PASSIGN / MASSIGN class rows", function()
+    local st = PP.New()
+    ok(PP.Parse(st, "SELF 1010nn1010nnnn@12n3nnnnn", "Ann Light", false))
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), "WISDOM")
+    eq(PP.PlannedFamily(st, "Ann Light", "ROGUE"), "MIGHT")
+    eq(PP.PlannedFamily(st, "Ann Light", "PRIEST"), nil)
+    eq(PP.PlannedFamily(st, "Ann Light", "DRUID"), "KINGS")
+    ok(PP.Parse(st, "PASSIGN Ann Light@nnnnnnnn3", "Ann Light", false))
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), nil)
+    eq(PP.PlannedFamily(st, "Ann Light", "SHAMAN"), "KINGS")
+    ok(PP.Parse(st, "MASSIGN Ann Light 2", "Ann Light", false))
+    eq(PP.PlannedFamily(st, "Ann Light", "MAGE"), "MIGHT")
+    ok(PP.Parse(st, "MASSIGN Ann Light 0", "Ann Light", false))
+    eq(PP.PlannedFamily(st, "Ann Light", "MAGE"), nil)
+end)
+
+test("PP2 NASSIGN overrides class plan; 0 deletes; Forever-only blessings", function()
+    local st = PP.New()
+    PP.Parse(st, "ASSIGN Ann Light 1 3", "Ann Light", false)
+    PP.Parse(st, "NASSIGN Ann_Light 1 Bo_Stone 2@Ann_Light 1 Cy_Reed 4", "Ann Light", false)
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR", "Bo Stone"), "MIGHT")
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR", "Dee Oak"), "KINGS")
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR", "Cy Reed"), nil, "Salvation doesn't exist here")
+    PP.Parse(st, "NASSIGN Ann_Light 1 Bo_Stone 0", "Ann Light", false)
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR", "Bo Stone"), "KINGS")
+end)
+
+test("PP3 authority: self, leader, or FREEASSIGN only", function()
+    local st = PP.New()
+    ok(not PP.Parse(st, "ASSIGN Ann Light 1 3", "Mallory", false))
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), nil)
+    ok(PP.Parse(st, "ASSIGN Ann Light 1 3", "Lead Er", true))
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), "KINGS")
+    PP.Parse(st, "FREEASSIGN YES | SYMCOUNT 5 | COOLDOWNS:n:n:n:n", "Bo Stone", false)
+    ok(PP.Parse(st, "ASSIGN Bo Stone 2 2", "Mallory", false))
+    eq(PP.PlannedFamily(st, "Bo Stone", "ROGUE"), "MIGHT")
+end)
+
+test("PP4 CLEAR scope and realm-suffix normalisation", function()
+    local st = PP.New()
+    local norm = function(n) return (n:gsub("%-Realm$", "")) end
+    PP.Parse(st, "ASSIGN Ann Light 1 3", "Ann Light-Realm", false, norm)
+    PP.Parse(st, "ASSIGN Bo Stone 1 2", "Bo Stone", false, norm)
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), "KINGS")
+    PP.Parse(st, "CLEAR", "Ann Light-Realm", false, norm)
+    eq(PP.PlannedFamily(st, "Ann Light", "WARRIOR"), nil)
+    eq(PP.PlannedFamily(st, "Bo Stone", "WARRIOR"), "MIGHT")
+    PP.Parse(st, "CLEAR SKIP", "Lead Er", true, norm)
+    eq(PP.PlannedFamily(st, "Bo Stone", "WARRIOR"), nil)
+    ok(not PP.Parse(st, "REQ", "Bo Stone", false))
+    ok(not PP.Parse(st, "garbage", "Bo Stone", false))
+end)
+
+test("PP5 engine: planned family skipped unless I already hold it", function()
+    local m = member("M", "WARRIOR", "DAMAGER")
+    m.planned = { MIGHT = "Ann Light" }
+    local d = E.Decide(m, ctx())
+    eq(d.family, "KINGS"); ok(hasSkip(d, "MIGHT", "PLANNED_BY")); eq(d.reason.code, "FALLBACK")
+    m.ppAssigned = "MIGHT"
+    eq(E.Decide(m, ctx()).family, "KINGS", "my plan can't take a family planned for someone else")
+    m.planned, m.ppAssigned = nil, "KINGS"
+    local d2 = E.Decide(m, ctx())
+    eq(d2.family, "KINGS"); eq(d2.reason.code, "PP_ASSIGNED")
+    m.assigned = "MIGHT"
+    eq(E.Decide(m, ctx()).reason.code, "ASSIGNED", "manual pin wins")
 end)
 
 ---------------------------------------------------------------- report

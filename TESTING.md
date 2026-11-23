@@ -60,4 +60,21 @@ Turn on `/bfm debug on` during testing and use `/bfm diag` to dump state.
 - [ ] `/bfm greater on` with two DPS warriors who both need Might: the button shows Greater Might for all warriors.
 - [ ] If one of them is pinned to Kings or has Might from another paladin, you get single-target blessings instead.
 
+**Key binding, options, minimap (1.1.0)**
+- [ ] Bind a key under Keybindings > AddOns > Buff-o-Matic. One press casts once. Holding the key does not repeat-cast.
+- [ ] The key does nothing in combat, with no "action blocked" error.
+- [ ] Options > AddOns > Buff-o-Matic opens the panel, and so does `/bfm options`. Toggling a checkbox takes effect immediately.
+- [ ] Minimap button: left-click toggles the window, right-click opens options, and dragging moves it around the minimap. `/bfm minimap off` hides it.
+- [ ] Addon compartment (the minimap addon list): Buff-o-Matic appears and its clicks behave like the minimap button.
+
+**Ready check**
+- [ ] Leave someone unbuffed, then start a ready check. You hear a sound, a chat line names them, and the window border flashes.
+- [ ] With everyone buffed and nothing near expiry, a ready check stays quiet.
+
+**PallyPower (needs a second paladin running PallyPower)**
+- [ ] They assign themselves Kings for Warriors in PallyPower. `/bfm pp` lists it, and your button gives warriors something else. The tooltip says "Kings is <name>'s job (PallyPower)".
+- [ ] If you already had Kings on a warrior before they assigned it, you keep it (no swap) until it's due.
+- [ ] The raid leader assigns *you* Might on Warriors in PallyPower. Your button now gives warriors Might, with the reason "Your PallyPower assignment".
+- [ ] `/bfm pallypower off` ignores their plans.
+
 Please report anything that fails with the output of `/bfm diag`.

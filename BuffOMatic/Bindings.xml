@@ -1,0 +1,5 @@
+<Bindings>
+	<!-- Fires the secure Smart Bless button. The button acts on key UP only
+	     (useOnKeyDown=false), so one key press = at most one cast. -->
+	<Binding name="CLICK BuffOMaticMainButton:LeftButton" header="BUFFOMATIC" category="ADDONS"/>
+</Bindings>

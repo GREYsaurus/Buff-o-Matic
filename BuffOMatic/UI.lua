@@ -43,6 +43,7 @@ function UI.SkipText(sk)
     elseif sk.code == "SUPPLIED_BY_EXPIRING" then
         return string.format(L.S_SUPPLIED_BY_EXPIRING, fam(sk.family), by, ns.FormatTime(sk.remaining))
     elseif sk.code == "ASSIGNED_SUPPLIED" then return string.format(L.S_ASSIGNED_SUPPLIED, fam(sk.family), by)
+    elseif sk.code == "PLANNED_BY" then return string.format(L.S_PLANNED_BY, fam(sk.family), by)
     end
     return string.format(L["S_" .. sk.code], fam(sk.family))
 end
@@ -318,9 +319,9 @@ function UI.Update()
         end
         local d = ns.decisions[a.guid]
         local txt = UI.ReasonText(d)
-        if d and d.skipped and d.skipped[1] and (d.reason.code == "FALLBACK" or d.reason.code == "ASSIGNED") then
+        if d and d.skipped and d.skipped[1] and (d.reason.code == "FALLBACK" or d.reason.code == "ASSIGNED" or d.reason.code == "PP_ASSIGNED") then
             for _, sk in ipairs(d.skipped) do
-                if sk.code:find("SUPPLIED") then txt = UI.SkipText(sk) break end
+                if sk.code:find("SUPPLIED") or sk.code == "PLANNED_BY" then txt = UI.SkipText(sk) break end
             end
         end
         UI.reason:SetText(txt)
@@ -462,4 +463,32 @@ function UI.ResetPosition()
         UI.frame:ClearAllPoints()
         UI.frame:SetPoint("CENTER", UIParent, "CENTER", 300, 0)
     end)
+end
+
+function UI.Toggle()
+    if not UI.frame then return end
+    UI.SetShown(ns.db.hidden == true)
+end
+
+-- Ready-check attention: pulse the border for a few seconds (cosmetic, combat-safe).
+function UI.Flash()
+    local f = UI.frame
+    if not f or not f.SetBackdropBorderColor then return end
+    if UI.flashTicker then UI.flashTicker:Cancel() end
+    if ns.db.hidden then UI.SetShown(true) end
+    local n = 0
+    local ticker
+    ticker = C_Timer.NewTicker(0.25, function()
+        n = n + 1
+        if n >= 16 then
+            f:SetBackdropBorderColor(0.85, 0.7, 0.2, 0.9)
+            ticker:Cancel()
+            if UI.flashTicker == ticker then UI.flashTicker = nil end
+        elseif n % 2 == 1 then
+            f:SetBackdropBorderColor(1, 0.25, 0.1, 1)
+        else
+            f:SetBackdropBorderColor(1, 0.9, 0.3, 1)
+        end
+    end)
+    UI.flashTicker = ticker
 end
