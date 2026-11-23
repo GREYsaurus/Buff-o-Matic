@@ -35,6 +35,14 @@ function ns.FamilyName(fam)
     return L["FAM_" .. tostring(fam)]
 end
 
+-- Per-player override (role / assigned / priority / exclude), keyed by display name.
+function ns.SetPlayerOption(name, key, value)
+    local pl = ns.Settings.Player(name, true)
+    if not pl then return end
+    pl[key] = value
+    ns.RequestRefresh(true)
+end
+
 ---------------------------------------------------------------- castability
 local function castability(m, spellID)
     local unit = m.unit
@@ -309,6 +317,8 @@ ns.On("PLAYER_ENTERING_WORLD", full)
 ns.On("GROUP_ROSTER_UPDATE", full)
 ns.On("PLAYER_ROLES_ASSIGNED", full)
 ns.On("UNIT_CONNECTION", full)
+ns.On("PLAYER_SPECIALIZATION_CHANGED", full)
+ns.On("PLAYER_TALENT_UPDATE", full)
 ns.On("PLAYER_REGEN_ENABLED", function()
     if ns.UI and ns.enabled then ns.UI.Layout() end
     full()

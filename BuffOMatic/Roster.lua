@@ -47,7 +47,18 @@ function R.Rebuild()
                 priorityOverride = p.priority,
                 excluded = (isSelf and not db.includeSelf) or p.exclude or false,
             }
-            if p.role then m.role, m.roleManual = p.role, true else m.role = C.UnitRole(unit) end
+            -- Role precedence: manual override > party/Group Finder role icon > own spec > unknown.
+            local groupRole = C.UnitRole(unit)
+            if p.role then
+                m.role, m.roleSource = p.role, "MANUAL"
+            elseif groupRole ~= "NONE" then
+                m.role, m.roleSource = groupRole, "GROUP"
+            else
+                local spec = isSelf and C.PlayerSpecRole()
+                if spec then m.role, m.roleSource = spec, "SPEC"
+                else m.role, m.roleSource = "NONE", "NONE" end
+            end
+            m.roleManual = m.roleSource == "MANUAL"
             members[guid] = m
             unitToGUID[unit] = guid
             if u.inRotation and not m.excluded then order[#order + 1] = m end

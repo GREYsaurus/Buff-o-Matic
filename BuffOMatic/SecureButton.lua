@@ -39,19 +39,24 @@ end
 -- bound to a unit token (no smart selection in combat).
 function SB.CreateRow(parent, i)
     local b = CreateFrame("Button", "BuffOMaticRow" .. i, parent, "SecureActionButtonTemplate")
-    b:RegisterForClicks("LeftButtonUp")
+    -- Left click = optional secure cast (type1 only); right click = settings menu.
+    -- Right click has no secure action type, so it can never cast.
+    b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     b:SetAttribute("useOnKeyDown", false)
+    b:SetScript("PostClick", function(self, button)
+        if button == "RightButton" and ns.UI and ns.UI.OpenMemberMenu then ns.UI.OpenMemberMenu(self) end
+    end)
     return b
 end
 
 function SB.SetRowAction(b, unit, spellName)
     if InCombatLockdown() then return false end
     if unit and spellName then
-        b:SetAttribute("type", "spell")
+        b:SetAttribute("type1", "spell")
         b:SetAttribute("spell", spellName)
         b:SetAttribute("unit", unit)
     else
-        b:SetAttribute("type", nil)
+        b:SetAttribute("type1", nil)
         b:SetAttribute("spell", nil)
         b:SetAttribute("unit", nil)
     end

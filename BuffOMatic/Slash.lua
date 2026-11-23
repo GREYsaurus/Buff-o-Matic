@@ -31,6 +31,8 @@ local function splitLast(rest)
 end
 
 local function resolveName(name)
+    local lower = name:lower()
+    if lower == "me" or lower == "self" or lower == "myself" then return C.UnitName("player") or name end
     local m = R.FindByName(name)
     return m and m.name or name
 end
@@ -48,7 +50,7 @@ local HELP = {
     "/bfm refresh <min> | warn <min> | grace <sec>",
     "/bfm shortpct <0-1> | shortwarnpct <0-1>  - short-duration policy",
     "/bfm assign <name> <kings|might|wisdom|auto>",
-    "/bfm role <name> <tank|healer|dps|auto>",
+    "/bfm role <name|me> <tank|healer|dps|auto>  (or right-click a row)",
     "/bfm prio <name> <kings,might,...|auto>",
     "/bfm classprio <CLASS> <TANK|HEALER|DAMAGER|NONE> <list|default>",
     "/bfm exclude <name> on|off",

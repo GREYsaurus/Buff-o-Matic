@@ -64,7 +64,7 @@ local function memberTooltip(owner, m)
     local now = GetTime()
     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
     GameTooltip:AddLine(classColor(m.class) .. m.name .. "|r")
-    GameTooltip:AddDoubleLine(L.TT_ROLE, (L["ROLE_" .. (m.role or "NONE")]) .. (m.roleManual and L.TT_ROLE_MANUAL or ""), 1, 0.82, 0, 1, 1, 1)
+    GameTooltip:AddDoubleLine(L.TT_ROLE, (L["ROLE_" .. (m.role or "NONE")]) .. L["RSRC_" .. (m.roleSource or "NONE")], 1, 0.82, 0, 1, 1, 1)
     if m.excluded then GameTooltip:AddLine(L.ST_EXCLUDED, 0.6, 0.6, 0.6) end
     if d then
         if d.family then
@@ -411,6 +411,43 @@ function UI.Update()
             row.timer:SetText(timer)
         end
     end
+end
+
+---------------------------------------------------------------- right-click menu
+-- Uses the modern MenuUtil API (present in the 12.x engine Forever runs on). Settings
+-- changes are plain saved-variable writes, so this is safe in combat too; protected
+-- re-preparation happens on the next out-of-combat refresh.
+function UI.OpenMemberMenu(row)
+    local m = row.member and R.members[row.member]
+    if not m then return end
+    if not (MenuUtil and MenuUtil.CreateContextMenu) then ns.Print(L.MENU_UNAVAILABLE) return end
+    local name = m.name
+    local function opt(key)
+        local pl = ns.db.players[name]
+        return pl and pl[key]
+    end
+    local ok, err = pcall(MenuUtil.CreateContextMenu, row, function(_, root)
+        root:CreateTitle(name)
+        local roleMenu = root:CreateButton(L.MENU_ROLE)
+        for _, r in ipairs({ { false, L.MENU_AUTO }, { "TANK", L.ROLE_TANK }, { "HEALER", L.ROLE_HEALER }, { "DAMAGER", L.ROLE_DAMAGER } }) do
+            roleMenu:CreateRadio(r[2],
+                function() return (opt("role") or false) == r[1] end,
+                function() ns.SetPlayerOption(name, "role", r[1] or nil) end)
+        end
+        local famMenu = root:CreateButton(L.MENU_BLESSING)
+        famMenu:CreateRadio(L.MENU_AUTO,
+            function() return opt("assigned") == nil end,
+            function() ns.SetPlayerOption(name, "assigned", nil) end)
+        for _, f in ipairs(B.ORDER) do
+            famMenu:CreateRadio(fam(f),
+                function() return opt("assigned") == f end,
+                function() ns.SetPlayerOption(name, "assigned", f) end)
+        end
+        root:CreateCheckbox(L.MENU_EXCLUDE,
+            function() return opt("exclude") == true end,
+            function() ns.SetPlayerOption(name, "exclude", not opt("exclude") or nil) end)
+    end)
+    if not ok then ns.Debug("menu error", err) ns.Print(L.MENU_UNAVAILABLE) end
 end
 
 function UI.SetShown(show)

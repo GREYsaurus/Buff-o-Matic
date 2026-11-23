@@ -10,7 +10,8 @@ local handlers = {}
 function ns.On(event, fn)
     if not handlers[event] then
         handlers[event] = {}
-        frame:RegisterEvent(event)
+        -- pcall: registering an event this client doesn't have must not break loading
+        if not pcall(frame.RegisterEvent, frame, event) then return end
     end
     table.insert(handlers[event], fn)
 end
@@ -61,7 +62,8 @@ ns.On("PLAYER_REGEN_ENABLED", function()
 end)
 
 function ns.Print(msg)
-    print("|cffffd100Buff-o-Matic|r: " .. tostring(msg))
+    -- "|" starts a WoW escape sequence; double it so "<a|b>" prints literally.
+    print("|cffffd100Buff-o-Matic|r: " .. (tostring(msg):gsub("|", "||")))
 end
 
 function ns.Debug(...)

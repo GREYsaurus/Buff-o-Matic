@@ -58,7 +58,13 @@ These are judgment calls, not objective truth. Kings is the safe pick when a rol
 | Paladin | Kings > Wisdom > Might | Wisdom > Kings | Might > Kings > Wisdom | Kings > Wisdom > Might |
 | Shaman | – | Wisdom > Kings | Kings > Might > Wisdom | Kings > Wisdom > Might |
 
-Roles come from the group role (`UnitGroupRolesAssigned`). When no role is set, the "unknown" column applies. Correct it with `/bfm role`. Forever has no threat-reducing blessing (Salvation was removed), but the engine is built to never auto-cast one on a tank if one is ever added.
+**Where roles come from**, in order of precedence:
+1. **Manual:** right-click a member row and choose Role, or type `/bfm role <name|me> tank`.
+2. **Party role icon:** set through Group Finder, or by right-clicking a portrait and choosing Set Role.
+3. **Your own talent spec:** for yourself only, if the client exposes it.
+4. **Unknown:** the "unknown role" column applies.
+
+The row tooltip shows which source was used. Right-clicking a row also lets you pin a blessing or exclude that player. Forever has no threat-reducing blessing (Salvation was removed), but the engine is built to never auto-cast one on a tank if one is ever added.
 
 ## Slash commands (`/bfm` or `/buffomatic`)
 | Command | Effect |

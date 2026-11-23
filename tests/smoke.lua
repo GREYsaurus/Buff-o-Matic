@@ -332,6 +332,7 @@ check(btn.attrs.type == "spell", "button re-prepared after combat")
 -- 5) Party slot reorder after preparation: the click must follow the GUID, not the slot.
 local preparedName = ns.Roster.members[ns.prepared.guid].name
 local preparedUnit = ns.prepared.unit
+if preparedUnit == "player" then preparedUnit = "party1" end -- the player token never moves
 local other = preparedUnit == "party1" and "party2" or "party1"
 world.units[preparedUnit], world.units[other] = world.units[other], world.units[preparedUnit]
 local r, name = click(btn)
@@ -404,6 +405,71 @@ for i = 1, 6 do
     click(btn) advance(1.2)
 end
 check(foundGreater, "greater blessing offered for two same-intent warriors; why=" .. tostring(ns.greaterWhy) .. " prepared=" .. tostring(ns.prepared and ns.prepared.family) .. " " .. tostring(ns.prepared and ns.prepared.unit))
+
+-- 11) Roles: spec fallback for yourself, group role wins, manual wins over both.
+slash("greater off")
+local selfGUID = world.units.player.guid
+local function selfMember() return ns.Roster.members[selfGUID] end
+fire("GROUP_ROSTER_UPDATE") advance(0.5)
+check(selfMember().roleSource == "NONE", "no role source without group role or spec API: " .. tostring(selfMember().role) .. "/" .. tostring(selfMember().roleSource))
+C_SpecializationInfo = {
+    GetSpecialization = function() return 1 end,
+    GetSpecializationInfo = function() return 65, "Holy", "", 0, "HEALER" end,
+}
+fire("PLAYER_SPECIALIZATION_CHANGED") advance(0.5)
+check(selfMember().role == "HEALER" and selfMember().roleSource == "SPEC", "own spec role used when no party role")
+world.units.player.role = "TANK"
+fire("PLAYER_ROLES_ASSIGNED") advance(0.5)
+check(selfMember().role == "TANK" and selfMember().roleSource == "GROUP", "party role icon wins over spec")
+slash("role me dps") advance(0.5)
+check(selfMember().role == "DAMAGER" and selfMember().roleSource == "MANUAL", "/bfm role me sets your own role")
+slash("role me auto") advance(0.5)
+check(selfMember().roleSource == "GROUP", "/bfm role me auto clears override")
+world.units.player.role = "NONE"
+
+-- 12) Right-click row menu (MenuUtil mock records radios/checkboxes and lets us click them).
+local menuItems = {}
+local function node()
+    local n = {}
+    function n:CreateTitle(t) end
+    function n:CreateButton(t) local c = node(); menuItems[t] = c; c.items = {}; return c end
+    function n:CreateRadio(t, isSel, setSel) self.items = self.items or {}; self.items[t] = { isSel = isSel, set = setSel } end
+    function n:CreateCheckbox(t, isSel, setSel) menuItems[t] = { isSel = isSel, set = setSel } end
+    return n
+end
+MenuUtil = { CreateContextMenu = function(owner, gen) local root = node(); gen(owner, root) end }
+local row
+for i = 1, 10 do
+    local r = namedFrames["BuffOMaticRow" .. i]
+    if r and r.member == world.units.party2.guid then row = r end
+end
+check(row ~= nil, "row exists for party2")
+if row then
+    local target = ns.Roster.members[row.member]
+    row.scripts.PostClick(row, "RightButton", false)
+    check(menuItems.Role and menuItems.Role.items.Healer, "role submenu built")
+    menuItems.Role.items.Healer.set()
+    advance(0.5)
+    target = ns.Roster.members[row.member]
+    check(target.role == "HEALER" and target.roleSource == "MANUAL", "menu sets role")
+    check(menuItems.Role.items.Healer.isSel(), "menu radio reflects role")
+    menuItems.Blessing.items.Kings.set() advance(0.5)
+    check(ns.Roster.members[row.member].assigned == "KINGS", "menu pins blessing")
+    menuItems.Blessing.items.Automatic.set() menuItems.Role.items.Automatic.set() advance(0.5)
+    check(ns.Roster.members[row.member].assigned == nil and ns.Roster.members[row.member].roleSource ~= "MANUAL", "menu resets to automatic")
+    -- right click never carries a secure cast; left click only when member buttons on
+    slash("buttons on") advance(1.2)
+    check(row.attrs.type == nil and row.attrs.type1 == "spell", "row cast bound to left click only")
+    slash("buttons off") advance(1.2)
+    check(row.attrs.type1 == nil, "row cast cleared when member buttons off")
+end
+
+-- 13) Chat output escapes "|" so usage text isn't eaten by WoW escape codes.
+printed = {}
+slash("help")
+local sawEscaped = false
+for _, line in ipairs(printed) do if line:find("tank||healer", 1, true) then sawEscaped = true end end
+check(sawEscaped, "help text escapes pipes")
 
 ---------------------------------------------------------------- report
 for _, e in ipairs(errors) do failures[#failures + 1] = "runtime: " .. e end

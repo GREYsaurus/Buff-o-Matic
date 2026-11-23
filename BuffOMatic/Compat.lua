@@ -70,6 +70,33 @@ function C.UnitRole(unit)
     return "NONE"
 end
 
+-- Role of the player's active talent spec, if this client exposes specializations.
+-- Returns "TANK" | "HEALER" | "DAMAGER" | nil. Every call is guarded: Forever's spec
+-- support is not documented, so absence simply means "no spec role".
+function C.PlayerSpecRole()
+    local idx
+    if C_SpecializationInfo and C_SpecializationInfo.GetSpecialization then
+        local ok, v = pcall(C_SpecializationInfo.GetSpecialization)
+        if ok and not C.IsSecret(v) then idx = v end
+    end
+    if not idx and GetSpecialization then
+        local ok, v = pcall(GetSpecialization)
+        if ok and not C.IsSecret(v) then idx = v end
+    end
+    if type(idx) ~= "number" or idx < 1 then return nil end
+    local role
+    if GetSpecializationRole then
+        local ok, r = pcall(GetSpecializationRole, idx)
+        if ok and not C.IsSecret(r) then role = r end
+    end
+    if not role and C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
+        local ok, _, _, _, _, r = pcall(C_SpecializationInfo.GetSpecializationInfo, idx)
+        if ok and not C.IsSecret(r) then role = r end
+    end
+    if role == "TANK" or role == "HEALER" or role == "DAMAGER" then return role end
+    return nil
+end
+
 function C.SpellName(id)
     if C_Spell and C_Spell.GetSpellName then
         local ok, n = pcall(C_Spell.GetSpellName, id)
