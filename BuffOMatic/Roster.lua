@@ -58,7 +58,6 @@ function R.Rebuild()
                 if spec then m.role, m.roleSource = spec, "SPEC"
                 else m.role, m.roleSource = "NONE", "NONE" end
             end
-            m.roleManual = m.roleSource == "MANUAL"
             members[guid] = m
             unitToGUID[unit] = guid
             if u.inRotation and not m.excluded then order[#order + 1] = m end

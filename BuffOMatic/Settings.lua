@@ -66,10 +66,6 @@ function St.Merge(db)
     return db
 end
 
-function St.Get()
-    return ns.db or St.DEFAULTS
-end
-
 function St.Player(name, create)
     local db = ns.db
     if not db or not name then return nil end

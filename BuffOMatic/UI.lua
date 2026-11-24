@@ -4,7 +4,7 @@
 local _, ns = ...
 local UI = {}
 ns.UI = UI
-local L, C, B, T = ns.L, ns.Compat, ns.Blessings, ns.Thresholds
+local L, C, B = ns.L, ns.Compat, ns.Blessings
 local R = ns.Roster
 
 local WIDTH, ROW_H, MAX_ROWS = 270, 16, 10

@@ -15,7 +15,7 @@ registerPrefix()
 
 -- Wire names may carry a "-Realm" suffix; map them onto the roster's spelling.
 local function norm(name)
-    if R.FindByName and type(name) == "string" then
+    if type(name) == "string" then
         for _, m in pairs(R.members) do
             if m.name == name then return name end
         end

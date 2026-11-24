@@ -58,10 +58,6 @@ B.MANA_CLASSES = {
     DRUID = true, HUNTER = true, SHAMAN = true,
 }
 
--- Short tactical blessings (Protection, Freedom, Sacrifice). Recorded only so they are
--- never mistaken for maintenance buffs; Buff-o-Matic never casts them.
-B.TACTICAL_IDS = { 1022, 5599, 10278, 1044, 6940, 20729 }
-
 -- Non-paladin effects that are mutually exclusive with / redundant to a family.
 -- Empty by default: the only claims found (e.g. Forever campfire buffs not stacking with
 -- Kings/Might) come from fan guides without spell IDs, so nothing is asserted here.
