@@ -13,7 +13,7 @@ local function changed() ns.RequestRefresh(true) end
 local EFFECTS = {
     showMembers = function() ns.UI.Layout() changed() end,
     showOthers = changed, includeSelf = changed, sticky = changed, raid = changed,
-    greaterMode = changed, memberButtons = changed,
+    greaterMode = changed, memberButtons = changed, glow = changed,
     pallyPowerSync = function() changed() if ns.db.pallyPowerSync then ns.RequestPallyPower(true) end end,
 }
 
@@ -112,7 +112,7 @@ function O.Build()
         function(v) if v >= 0 and v <= 300 then ns.db.graceSeconds = v changed() end end)
 
     y = header(p, L.OPT_ALERTS, y - 6)
-    for _, k in ipairs({ "sound", "chatAlerts", "readyCheck" }) do y = checkbox(p, L["OPT_" .. k], y, opt(k)) end
+    for _, k in ipairs({ "glow", "sound", "chatAlerts", "readyCheck" }) do y = checkbox(p, L["OPT_" .. k], y, opt(k)) end
 
     y = header(p, L.OPT_DISPLAY, y - 6)
     y = checkbox(p, L.OPT_shown, y, function() return not ns.db.hidden end, function(v) ns.UI.SetShown(v) end)

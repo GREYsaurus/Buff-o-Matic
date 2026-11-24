@@ -121,6 +121,74 @@ local function mainTooltip(owner)
     GameTooltip:Show()
 end
 
+---------------------------------------------------------------- attention glow
+-- A pulsing border around the window plus an action-button style glow on Smart Bless,
+-- shown while someone is missing your blessing or one is due for a refresh. Purely
+-- cosmetic textures (no secure attributes), so it is safe to toggle at any time.
+local function pulse(region, from, to, dur)
+    if not region.CreateAnimationGroup then return nil end
+    local ag = region:CreateAnimationGroup()
+    if not ag or not ag.CreateAnimation then return nil end
+    ag:SetLooping("BOUNCE")
+    local a = ag:CreateAnimation("Alpha")
+    a:SetFromAlpha(from)
+    a:SetToAlpha(to)
+    a:SetDuration(dur)
+    if a.SetSmoothing then a:SetSmoothing("IN_OUT") end
+    return ag
+end
+
+function UI.CreateGlow(f, btn)
+    local g = CreateFrame("Frame", nil, f, "BackdropTemplate")
+    g:SetPoint("TOPLEFT", -4, 4)
+    g:SetPoint("BOTTOMRIGHT", 4, -4)
+    g:SetFrameLevel((f:GetFrameLevel() or 1) + 5)
+    if g.SetBackdrop then
+        g:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 3 })
+    end
+    g:Hide()
+    g.anim = pulse(g, 1, 0.15, 0.6)
+    UI.glow = g
+
+    local bg = btn:CreateTexture(nil, "OVERLAY")
+    bg:SetTexture("Interface\\Buttons\\UI-ActionButton-Border")
+    bg:SetBlendMode("ADD")
+    bg:SetPoint("CENTER")
+    bg:SetSize(72, 72)
+    bg:Hide()
+    bg.anim = pulse(bg, 1, 0.3, 0.6)
+    UI.buttonGlow = bg
+end
+
+local function setPulse(region, on)
+    if not region then return end
+    if on then
+        if not region:IsShown() then
+            region:Show()
+            if type(region.anim) == "table" then region.anim:Play() end
+        end
+    elseif region:IsShown() then
+        if type(region.anim) == "table" then region.anim:Stop() end
+        region:Hide()
+    end
+end
+
+-- urgent = someone is missing a blessing (red); otherwise a refresh is due (gold).
+function UI.UpdateGlow(sum)
+    if not UI.glow then return end
+    local missing = #(sum.missing or {}) > 0
+    local due = ns.prepared ~= nil or sum.warn
+    local on = ns.db.glow and not C.InCombat() and (missing or due)
+    if on and UI.glow.SetBackdropBorderColor then
+        if missing then UI.glow:SetBackdropBorderColor(1, 0.2, 0.1, 1)
+        else UI.glow:SetBackdropBorderColor(1, 0.8, 0.1, 1) end
+        if missing then UI.buttonGlow:SetVertexColor(1, 0.35, 0.2) else UI.buttonGlow:SetVertexColor(1, 0.85, 0.3) end
+    end
+    UI.glowing = on and true or false
+    setPulse(UI.glow, on)
+    setPulse(UI.buttonGlow, on and ns.prepared ~= nil)
+end
+
 ---------------------------------------------------------------- creation
 function UI.Create()
     if UI.frame then return end
@@ -198,6 +266,8 @@ function UI.Create()
     others:SetWidth(WIDTH - 16)
     others:SetJustifyH("LEFT")
     UI.others = others
+
+    UI.CreateGlow(f, btn)
 
     UI.rows = {}
     for i = 1, MAX_ROWS do
@@ -341,6 +411,8 @@ function UI.Update()
         ns.mainButton.icon:SetTexture(ICON)
         ns.mainButton.icon:SetDesaturated(anyBlocked and true or false)
     end
+
+    UI.UpdateGlow(sum)
 
     -- Status: missing state is separate from the timer, never hidden behind it.
     local parts = {}

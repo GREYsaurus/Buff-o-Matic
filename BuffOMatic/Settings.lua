@@ -31,6 +31,7 @@ St.DEFAULTS = {
     showOthers = true,
     showMembers = true,
     memberButtons = false,        -- secure per-member buttons (manual, also usable in combat)
+    glow = true,                  -- pulse the window while a blessing is missing or due
     readyCheck = true,            -- sound + chat + flash on a ready check when blessings are missing
     pallyPowerSync = true,        -- read other paladins' PallyPower assignments
     minimap = { hide = false, angle = 200 },

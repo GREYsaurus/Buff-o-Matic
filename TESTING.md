@@ -67,6 +67,10 @@ Turn on `/bfm debug on` during testing and use `/bfm diag` to dump state.
 - [ ] Minimap button: left-click toggles the window, right-click opens options, and dragging moves it around the minimap. `/bfm minimap off` hides it.
 - [ ] Addon compartment (the minimap addon list): Buff-o-Matic appears and its clicks behave like the minimap button.
 
+**Attention glow**
+- [ ] With someone unbuffed, the window border pulses red and the Smart Bless button glows. Once everyone is buffed it stops.
+- [ ] Lower the refresh time (`/bfm refresh 59`): the border pulses gold. It never pulses in combat.
+
 **Ready check**
 - [ ] Leave someone unbuffed, then start a ready check. You hear a sound, a chat line names them, and the window border flashes.
 - [ ] With everyone buffed and nothing near expiry, a ready check stays quiet.

@@ -302,6 +302,7 @@ local btn = namedFrames.BuffOMaticMainButton
 check(btn ~= nil, "main button created")
 check(btn.attrs.useOnKeyDown == false, "useOnKeyDown disabled")
 check(#stateDrivers == 1, "combat state driver registered")
+check(ns.UI.glow.shown and ns.UI.buttonGlow.shown and ns.UI.glowing, "window glows while blessings are missing")
 
 -- 1) Five clicks buff five people in roster order, each the right blessing.
 local expected = {
@@ -321,6 +322,7 @@ for i, exp in ipairs(expected) do
 end
 check((ns.UI.nextText.text or ""):find("Party buffed", 1, true) ~= nil, "party buffed message: " .. tostring(ns.UI.nextText.text))
 check(click(btn) == "noaction", "click with nothing to do casts nothing")
+check(not ns.UI.glow.shown and not ns.UI.buttonGlow.shown, "glow off once everyone is buffed")
 check(ns.summary.shortest ~= nil and not ns.summary.warn, "shortest timer tracked, no warning")
 
 -- 2) Timers: at exactly 10:00 nothing is due; just under -> due; warning under 5:00 with sound once.
@@ -518,6 +520,24 @@ BuffOMatic_OnAddonCompartmentClick("BuffOMatic", "LeftButton")
 check(ns.db.hidden ~= hiddenBefore, "compartment left-click toggles the window")
 BuffOMatic_OnAddonCompartmentClick("BuffOMatic", "LeftButton")
 check((not ns.db.hidden) == (not hiddenBefore), "compartment toggles back")
+
+-- 14b) Attention glow follows missing blessings, never in combat, and can be turned off.
+do
+    local u = world.units.party2
+    local saved = u.auras
+    u.auras = {}
+    fire("UNIT_AURA", "party2", {}) advance(1.2)
+    check(ns.UI.glowing and ns.UI.glow.shown, "glow on when a blessing drops")
+    enterCombat() advance(1.2)
+    check(not ns.UI.glow.shown, "no glow in combat")
+    leaveCombat() advance(1.2)
+    check(ns.UI.glow.shown, "glow back after combat")
+    slash("glow off") advance(1.2)
+    check(not ns.UI.glow.shown and not ns.UI.buttonGlow.shown, "/bfm glow off hides it")
+    slash("glow on") advance(1.2)
+    u.auras = saved
+    fire("UNIT_AURA", "party2", {}) advance(1.2)
+end
 
 -- 15) PallyPower coordination (read-only).
 check(world.prefix == "PLPWR", "PallyPower prefix registered")

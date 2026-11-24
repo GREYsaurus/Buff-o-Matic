@@ -58,6 +58,7 @@ local HELP = {
     "/bfm table  - print effective priority tables",
     "/bfm reset  - reset position and rotation state | resetall confirm - all settings",
     "/bfm options  - open the settings panel | minimap on|off",
+    "/bfm glow on|off  - flash the window when a blessing is missing or due",
     "/bfm readycheck on|off | pallypower on|off | pp  - show PallyPower plans",
     "/bfm debug on|off | diag",
 }
@@ -212,6 +213,7 @@ local function handler(msg)
         db.minimap.hide = not onoff(rest, not db.minimap.hide)
         ns.Options.UpdateMinimap()
         p("minimap button: " .. tostring(not db.minimap.hide))
+    elseif cmd == "glow" then db.glow = onoff(rest, db.glow) p("window glow: " .. tostring(db.glow)) changed()
     elseif cmd == "readycheck" then db.readyCheck = onoff(rest, db.readyCheck) p("ready check reminder: " .. tostring(db.readyCheck))
     elseif cmd == "pallypower" then
         db.pallyPowerSync = onoff(rest, db.pallyPowerSync)

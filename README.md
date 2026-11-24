@@ -36,6 +36,7 @@ A paladin blessing manager for **WoW Forever** (interface 16001). Click one **Sm
 - **Key binding:** Options > Keybindings > AddOns > Buff-o-Matic > *Smart Bless*. The key behaves exactly like a click: one cast per press, acting on key release.
 - **Options panel:** Options > AddOns > Buff-o-Matic, or `/bfm options`. Every option is also a slash command.
 - **Minimap button** (drag it around the edge) and the **addon compartment** entry. Left-click shows or hides the window; right-click opens the options. Use `/bfm minimap off` to hide the minimap button.
+- **Attention glow:** while someone is missing your blessing (red) or one is due for a refresh (gold), the window border pulses and the Smart Bless button glows. It is off in combat. Turn it off with `/bfm glow off`.
 - **Ready check:** if anyone is still missing your blessing, or one is about to expire, you get a sound, a chat line naming them, and a flashing window border. Turn it off with `/bfm readycheck off`.
 
 ### PallyPower coordination
@@ -101,6 +102,7 @@ The row tooltip shows which source was used. Right-clicking a row also lets you 
 | `/bfm table` | print the effective priority tables |
 | `/bfm reset` / `/bfm resetall confirm` | reset position and rotation / everything |
 | `/bfm options`, `/bfm minimap on\|off` | settings panel, minimap button |
+| `/bfm glow on\|off` | pulse the window when a blessing is missing or due (default on) |
 | `/bfm readycheck on\|off` | ready-check reminder (default on) |
 | `/bfm pallypower on\|off`, `/bfm pp` | follow PallyPower assignments (default on); list received plans |
 | `/bfm debug on\|off`, `/bfm diag` | debugging and a full state dump |
@@ -127,7 +129,7 @@ pip install lupa
 python tests/run_tests.py
 ```
 - `tests/run.lua`: 30 tests of the pure decision engine, thresholds, scheduler, cast state machine, Greater safety, combat guard and PallyPower parser. They cover all 22 scenarios from the spec.
-- `tests/smoke.lua`: loads every addon file in TOC order against a mocked WoW API and simulates a full session (104 checks), including options, the minimap button, ready checks and PallyPower messages.
+- `tests/smoke.lua`: loads every addon file in TOC order against a mocked WoW API and simulates a full session (110 checks), including options, the minimap button, ready checks and PallyPower messages.
 - `tools/make_logo.py` regenerates the logo, icon and banner (needs Pillow).
 - Manual in-game checklist: [TESTING.md](TESTING.md).
 
